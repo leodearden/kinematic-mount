@@ -40,39 +40,30 @@ min_thickness = 2;
 interference = 0.3;
 // The clearance to leave for radial misalignment of the assembly
 radial_clearance = 4;
-// not used yet
-//cutout_radius = 60;
 
-// Derived variables go here
-fixed_plate_top_z = -plate_gap / 2;
-plate_edge_length = 2 * (triangle_radius + sphere_radius + min_thickness);
-free_plate_bottom_z = -fixed_plate_top_z;
-
-// 
 module fixed_plate(sphere_r, triangle_r, plate_t) {
 	difference() {
-		fixed_plate_solid(plate_t);
+		fixed_plate_solid(sphere_r, triangle_r, plate_t);
 		fixed_plate_holes(sphere_r, triangle_r);
 	}
 }
 
-module fixed_plate_solid(plate_t) {
-	translate([0, 0, -plate_t/2 + fixed_plate_top_z])
+module fixed_plate_solid(sphere_r, triangle_r, plate_t) {
+	plate_edge_length = 2 * (triangle_r + sphere_r + min_thickness);
+	translate([0, 0, -plate_t/2 - plate_gap/2])
 		cube([plate_edge_length,
 			   plate_edge_length,
 				plate_t], center=true);
 }
 
 module fixed_plate_holes(sphere_r, triangle_r) {
-	//tetrahedron();
 	for ( angle = [0, 120, 240] ) {
 		rotate([0, 0, angle])
 			translate([triangle_r, 0, 0])
+				//tetrahedron();
 				sphere(r = sphere_r + interference);
 	}	
-	common_holes();
 }
-
 //fixed_plate_holes(sphere_radius, triangle_radius);
 
 // WRITEME
@@ -82,16 +73,15 @@ module fixed_plate_holes(sphere_r, triangle_r) {
 
 module free_plate(sphere_r, triangle_r, plate_t) {
 	difference() {
-		free_plate_solid(plate_t);
+		free_plate_solid(sphere_r, triangle_r, plate_t);
 		free_plate_holes(sphere_r, triangle_r);
 	}
 }
-
 //free_plate(sphere_radius, triangle_radius);
 
-module free_plate_solid(plate_t) {
-	translate([0, 0, plate_t - fixed_plate_top_z + free_plate_bottom_z])
-		fixed_plate_solid(plate_t);
+module free_plate_solid(sphere_r, triangle_r, plate_t) {
+	translate([0, 0, plate_t + plate_gap])
+		fixed_plate_solid(sphere_r, triangle_r, plate_t);
 }
 
 module free_plate_holes(sphere_r, triangle_r) {
@@ -105,18 +95,14 @@ module free_plate_holes(sphere_r, triangle_r) {
 							2*sphere_r],
 						  center = true);
 	}
-	common_holes();
 }
-
 //free_plate_holes(sphere_radius, triangle_radius);
 
-module common_holes() {
+module common_holes(plate_t) {
 	cylinder(h = 2 * (plate_t + interference) + plate_gap,
 				r = centre_mount_hole_radius,
 				center = true);
 }
-
-//common_holes(sphere_radius, triangle_radius);
 
 module spheres(sphere_r, triangle_r) {
 	for ( angle = [0, 120, 240] ) {
@@ -125,14 +111,18 @@ module spheres(sphere_r, triangle_r) {
 				sphere(r=sphere_r);
 	}
 }
-
 //spheres(sphere_radius, triangle_radius);
 
 module kinematic_mount(sphere_r, triangle_r) {
 	#spheres(sphere_r, triangle_r);
-       	plate_thickness = sphere_r + min_thickness ;
-	%fixed_plate(sphere_r, triangle_r, plate_thickness);
-	free_plate(sphere_r, triangle_r, plate_thickness);
+       	plate_thickness = sphere_r + min_thickness;
+	difference() {
+		union() {
+			%fixed_plate(sphere_r, triangle_r, plate_thickness);
+			free_plate(sphere_r, triangle_r, plate_thickness);
+		}
+		common_holes(plate_thickness);
+	}
 }
 
 kinematic_mount(sphere_radius, triangle_radius);
