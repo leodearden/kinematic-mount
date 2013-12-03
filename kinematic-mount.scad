@@ -2,9 +2,9 @@
 
 // Tips:
 //
-//  The fixed and free plates are just examples. You can use the *_holes() modules
-//   to adapt any suitable size and shape solids to be kinematically mounted 
-//   to each other.
+//  The fixed and free plates are just examples. Use the *_holes() modules 
+//   in your own designs, to adapt any suitable size and shape solids to be 
+//   kinematically mounted to each other.
 //
 //  The spheres should probably be ball bearings, rather than custom made. Just
 //   edit the sphere_raduius to match the balls you want to use. Epoxy them in 
@@ -13,7 +13,7 @@
 //  Bigger spheres will (other things being equal) give you a stiffer mount.
 //
 //  (So long as the flex in the plates stays negligable) using more widely spaced
-//   spheres will give you a stiffer mount. Edit triangle_radius to change the 
+//   spheres will give you a stiffer mount. Pass a different triangle_r to change the 
 //   sphere spacing.
 
 // Conventions:
@@ -23,14 +23,14 @@
 //  The origin is the centre of the mount, midway between the plates,
 //   and also the centre of the circle the spheres lie on.
 
-// Configuration: edit to meet your needs.
+// Configuration: edit to meet yor needs or to modify the example.
 
 triangle_radius = 60; 
 sphere_radius = 15;
 // Good for an M8 bolt
 centre_mount_hole_radius = 9/2;
 // The space between the plates when the mount is engaged.
-plate_gap = 2;
+plate_gap = 1;
 // The minimum thickness of any structure
 min_thickness = 2;
 
@@ -50,10 +50,10 @@ plate_edge_length = 2 * (triangle_radius + sphere_radius + min_thickness);
 free_plate_bottom_z = -fixed_plate_top_z;
 
 // 
-module fixed_plate() {
+module fixed_plate(sphere_r, triangle_r) {
 	difference() {
 		fixed_plate_solid();
-		fixed_plate_holes();
+		fixed_plate_holes(sphere_r, triangle_r);
 	}
 }
 
@@ -64,44 +64,52 @@ module fixed_plate_solid() {
 				plate_thickness], center=true);
 }
 
-module fixed_plate_holes() {
+module fixed_plate_holes(sphere_r, triangle_r) {
 	//tetrahedron();
 	for ( angle = [0, 120, 240] ) {
 		rotate([0, 0, angle])
-			translate([triangle_radius, 0, 0])
-				sphere(r = sphere_radius + interference);
+			translate([triangle_r, 0, 0])
+				sphere(r = sphere_r + interference);
 	}	
 	common_holes();
 }
 
+//fixed_plate_holes(sphere_radius, triangle_radius);
+
+// WRITEME
 //module tetrahedron() {
 //	polyhedron
 //}
 
-module free_plate() {
+module free_plate(sphere_r, triangle_r) {
 	difference() {
 		free_plate_solid();
-		free_plate_holes();
+		free_plate_holes(sphere_r, triangle_r);
 	}
 }
+
+//free_plate(sphere_radius, triangle_radius);
 
 module free_plate_solid() {
 	translate([0, 0, plate_thickness - fixed_plate_top_z + free_plate_bottom_z])
 		fixed_plate_solid();
 }
 
-module free_plate_holes() {
+module free_plate_holes(sphere_r, triangle_r) {
 	for ( angle = [0, 120, 240] ) {
 		rotate([0, 0, angle])
-			translate([triangle_radius, 0, 0])
+			translate([triangle_r, 0, 0])
 				rotate([45, 0, 0])
-					cube([2*(sphere_radius + radial_clearance),
-							2*sphere_radius,
-							2*sphere_radius],
+					// A triangular prisim would be better here.
+					cube([2*(sphere_r + radial_clearance),
+							2*sphere_r,
+							2*sphere_r],
 						  center = true);
 	}
 	common_holes();
 }
+
+//free_plate_holes(sphere_radius, triangle_radius);
 
 module common_holes() {
 	cylinder(h = 2 * (plate_thickness + interference) + plate_gap,
@@ -109,19 +117,23 @@ module common_holes() {
 				center = true);
 }
 
-module spheres() {
+//common_holes(sphere_radius, triangle_radius);
+
+module spheres(sphere_r, triangle_r) {
 	for ( angle = [0, 120, 240] ) {
 		rotate([0, 0, angle])
-			translate([triangle_radius, 0, 0])
-				sphere(r=sphere_radius);
+			translate([triangle_r, 0, 0])
+				sphere(r=sphere_r);
 	}
 }
 
-module kinematic_mount() {
-	#spheres();
-	%fixed_plate();
-	free_plate();
+//spheres(sphere_radius, triangle_radius);
+
+module kinematic_mount(sphere_r, triangle_r) {
+	#spheres(sphere_r, triangle_r);
+	%fixed_plate(sphere_r, triangle_r);
+	free_plate(sphere_r, triangle_r);
 }
 
-kinematic_mount();
+kinematic_mount(sphere_radius, triangle_radius);
 //free_plate_holes();
