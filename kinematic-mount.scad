@@ -44,24 +44,23 @@ radial_clearance = 4;
 //cutout_radius = 60;
 
 // Derived variables go here
-plate_thickness = sphere_radius + min_thickness ;
 fixed_plate_top_z = -plate_gap / 2;
 plate_edge_length = 2 * (triangle_radius + sphere_radius + min_thickness);
 free_plate_bottom_z = -fixed_plate_top_z;
 
 // 
-module fixed_plate(sphere_r, triangle_r) {
+module fixed_plate(sphere_r, triangle_r, plate_t) {
 	difference() {
-		fixed_plate_solid();
+		fixed_plate_solid(plate_t);
 		fixed_plate_holes(sphere_r, triangle_r);
 	}
 }
 
-module fixed_plate_solid() {
-	translate([0, 0, -plate_thickness/2 + fixed_plate_top_z])
+module fixed_plate_solid(plate_t) {
+	translate([0, 0, -plate_t/2 + fixed_plate_top_z])
 		cube([plate_edge_length,
 			   plate_edge_length,
-				plate_thickness], center=true);
+				plate_t], center=true);
 }
 
 module fixed_plate_holes(sphere_r, triangle_r) {
@@ -81,18 +80,18 @@ module fixed_plate_holes(sphere_r, triangle_r) {
 //	polyhedron
 //}
 
-module free_plate(sphere_r, triangle_r) {
+module free_plate(sphere_r, triangle_r, plate_t) {
 	difference() {
-		free_plate_solid();
+		free_plate_solid(plate_t);
 		free_plate_holes(sphere_r, triangle_r);
 	}
 }
 
 //free_plate(sphere_radius, triangle_radius);
 
-module free_plate_solid() {
-	translate([0, 0, plate_thickness - fixed_plate_top_z + free_plate_bottom_z])
-		fixed_plate_solid();
+module free_plate_solid(plate_t) {
+	translate([0, 0, plate_t - fixed_plate_top_z + free_plate_bottom_z])
+		fixed_plate_solid(plate_t);
 }
 
 module free_plate_holes(sphere_r, triangle_r) {
@@ -112,7 +111,7 @@ module free_plate_holes(sphere_r, triangle_r) {
 //free_plate_holes(sphere_radius, triangle_radius);
 
 module common_holes() {
-	cylinder(h = 2 * (plate_thickness + interference) + plate_gap,
+	cylinder(h = 2 * (plate_t + interference) + plate_gap,
 				r = centre_mount_hole_radius,
 				center = true);
 }
@@ -131,8 +130,9 @@ module spheres(sphere_r, triangle_r) {
 
 module kinematic_mount(sphere_r, triangle_r) {
 	#spheres(sphere_r, triangle_r);
-	%fixed_plate(sphere_r, triangle_r);
-	free_plate(sphere_r, triangle_r);
+       	plate_thickness = sphere_r + min_thickness ;
+	%fixed_plate(sphere_r, triangle_r, plate_thickness);
+	free_plate(sphere_r, triangle_r, plate_thickness);
 }
 
 kinematic_mount(sphere_radius, triangle_radius);
